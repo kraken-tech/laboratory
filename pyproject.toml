@@ -50,3 +50,35 @@ include-package-data = true
 test = [
     "pytest",
 ]
+mypy = [
+    "mypy",
+    {include-group = "test"},
+]
+
+
+# Mypy
+# ====
+
+[tool.mypy]
+files = "."
+exclude = [
+  "build/",
+  "docs/",
+  "venv",
+]
+
+pretty = true
+show_error_codes = true
+
+enable_error_code = [  # pragma: alphabetize
+  "ignore-without-code",
+  "possibly-undefined",
+  "truthy-bool",
+  "truthy-iterable",
+]
+strict = false
+ignore_missing_imports = true
+no_implicit_optional = true
+strict_equality = true
+warn_unreachable = true
+warn_no_return = true
