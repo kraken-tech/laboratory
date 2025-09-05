@@ -1,0 +1,53 @@
+# Project
+# -------
+
+[project]
+name = "laboratory"
+version = "1.0.2"
+authors = [
+    {name = "Joe Alcorn"},
+]
+description = "Sure-footed refactoring achieved through experimenting"
+license = "MIT"
+license-files = ["LICENSE"]
+readme = "README.rst"
+requires-python = ">=3.9"
+dependencies = []
+classifiers = [  # pragma: alphabetize
+  "Operating System :: OS Independent",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3.9",
+  "Programming Language :: Python :: 3.10",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Typing :: Typed",
+]
+
+[project.urls]
+Source = "https://github.com/kraken-tech/laboratory"
+Changelog = "https://github.com/kraken-tech/laboratory/blob/main/CHANGELOG"
+
+
+# Packaging
+# ---------
+
+[build-system]
+requires = ["setuptools>=77.0.3"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools]
+# This is the default but we include it to be explicit.
+include-package-data = true
+
+
+# Development
+# -----------
+
+[dependency-groups]
+test = [
+    "pytest",
+    "mock",
+]
