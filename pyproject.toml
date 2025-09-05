@@ -49,5 +49,4 @@ include-package-data = true
 [dependency-groups]
 test = [
     "pytest",
-    "mock",
 ]
