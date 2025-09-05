@@ -1,0 +1,35 @@
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [master]
+
+# Only allow one instance of this workflow for each PR.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref_name }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+    - uses: actions/checkout@v5
+    - uses: actions/setup-python@v6
+      with:
+        python-version: |
+          3.9
+          3.10
+          3.11
+          3.12
+          3.13
+          3.14
+        allow-prereleases: true
+        cache-dependency-path: |
+          pyproject.toml
+    - run: pip install tox tox-uv
+    - run: tox run-parallel --parallel-no-spinner
+      env:
+        FORCE_COLOR: "1"
