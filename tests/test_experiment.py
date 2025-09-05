@@ -119,7 +119,7 @@ def test_repr():
 def test_repr_with_exception():
     obs = Observation("an observation")
     obs.set_exception(ValueError("something is wrong"))
-    assert repr(obs) == """Observation(name='an observation', value=Unrecorded, exception=ValueError('something is wrong',))"""
+    assert repr(obs) == """Observation(name='an observation', value=Unrecorded, exception=ValueError('something is wrong'))"""
 
 
 def test_functions_executed_in_random_order():
