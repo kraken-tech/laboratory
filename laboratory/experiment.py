@@ -36,34 +36,6 @@ class Experiment(object):
         self._control = None
         self._candidates = []
 
-    @classmethod
-    def decorator(cls, candidate, *exp_args, **exp_kwargs):
-        '''
-        Decorate a control function in order to conduct an experiment when called.
-
-        :param callable candidate: your candidate function
-        :param iterable exp_args: positional arguments passed to :class:`Experiment`
-        :param dict exp_kwargs: keyword arguments passed to :class:`Experiment`
-
-        Usage::
-
-            candidate_func = lambda: True
-
-            @Experiment.decorator(candidate_func)
-            def control_func():
-                return True
-
-        '''
-        def wrapper(control):
-            @wraps(control)
-            def inner(*args, **kwargs):
-                experiment = cls(*exp_args, **exp_kwargs)
-                experiment.control(control, args=args, kwargs=kwargs)
-                experiment.candidate(candidate, args=args, kwargs=kwargs)
-                return experiment.conduct()
-            return inner
-        return wrapper
-
     def control(self, control_func, args=None, kwargs=None, name='Control', context=None):
         '''
         Set the experiment's control function. Must be set before ``conduct()`` is called.
