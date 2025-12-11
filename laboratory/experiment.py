@@ -3,6 +3,7 @@ from functools import wraps
 import logging
 import random
 import traceback
+from typing import Any, Callable, Dict, List, Optional, Tuple, Type
 
 from laboratory import exceptions
 from laboratory.observation import Observation
@@ -22,21 +23,38 @@ class Experiment(object):
      experiment results do not match
     '''
 
-    def __init__(self, name='Experiment', context=None, raise_on_mismatch=False):
+    name: str
+    raise_on_mismatch: bool
+    _context: Dict[str, Any]
+    _control: Optional[Dict[str, Any]]
+    _candidates: List[Dict[str, Any]]
+
+    def __init__(
+        self,
+        name: str = 'Experiment',
+        context: Optional[Dict[str, Any]] = None,
+        raise_on_mismatch: bool = False
+    ) -> None:
         '''
         :param string name: Experiment name
         :param dict context: Experiment-wide context
         :param bool raise_on_mismatch: Raise if results do not match
         '''
-
         self.name = name
         self._context = context or {}
         self.raise_on_mismatch = raise_on_mismatch
-
         self._control = None
         self._candidates = []
 
-    def control(self, control_func, args=None, kwargs=None, name='Control', context=None):
+
+    def control(
+        self,
+        control_func: Callable[..., Any],
+        args: Optional[Tuple[Any, ...]] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
+        name: str = 'Control',
+        context: Optional[Dict[str, Any]] = None
+    ) -> None:
         '''
         Set the experiment's control function. Must be set before ``conduct()`` is called.
 
@@ -61,7 +79,14 @@ class Experiment(object):
             'context': context or {},
         }
 
-    def candidate(self, cand_func, args=None, kwargs=None, name='Candidate', context=None):
+    def candidate(
+        self,
+        cand_func: Callable,
+        args: Optional[Tuple[Any, ...]] = None,
+        kwargs: Optional[Dict[str, Any]] = None,
+        name: str = 'Candidate',
+        context: Optional[Dict[str, Any]] = None
+    ) -> None:
         '''
         Adds a candidate function to an experiment. Can be used multiple times for
         multiple candidates.
@@ -80,7 +105,7 @@ class Experiment(object):
             'context': context or {},
         })
 
-    def conduct(self, randomize=True):
+    def conduct(self, randomize: bool = True) -> Any:
         '''
         Run control & candidate functions and return the control's return value.
         ``control()`` must be called first.
@@ -101,23 +126,25 @@ class Experiment(object):
             control = self._run_tested_func(raise_on_exception=True, **self._control)
             return control.value
 
-        # otherwise, let's wrap an executor around all of our functions and randomise the ordering
+        def get_func_executor(
+            obs_def: Dict[str, Any],
+            is_control: bool
+        ) -> Callable[[], Tuple[Observation, bool]]:
+            return lambda *a, **kw: (
+                self._run_tested_func(raise_on_exception=is_control, **obs_def),
+                is_control
+            )
 
-        def get_func_executor(obs_def, is_control):
-            """A lightweight wrapper around a tested function in order to retrieve state"""
-            return lambda *a, **kw: (self._run_tested_func(raise_on_exception=is_control, **obs_def), is_control)
-
-        funcs = [
+        funcs: List[Callable[[], Tuple[Observation, bool]]] = [
             get_func_executor(self._control, is_control=True),
-        ] + [get_func_executor(cand, is_control=False,) for cand in self._candidates]
+        ] + [get_func_executor(cand, is_control=False) for cand in self._candidates]
 
         if randomize:
             random.shuffle(funcs)
 
-        control = None
-        candidates = []
+        control: Optional[Observation] = None
+        candidates: List[Observation] = []
 
-        # go through the randomised list and execute the functions
         for func in funcs:
             observation, is_control = func()
             if is_control:
@@ -125,17 +152,20 @@ class Experiment(object):
             else:
                 candidates.append(observation)
 
+        if control is None:
+            raise exceptions.LaboratoryException("Control observation failed to run.")
+
         result = Result(self, control, candidates)
 
         try:
             self.publish(result)
         except Exception:
-            msg = 'Exception occured when publishing %s experiment data'
+            msg = 'Exception occurred when publishing %s experiment data'
             logger.exception(msg % self.name)
 
         return control.value
 
-    def enabled(self):
+    def enabled(self) -> bool:
         '''
         Enable the experiment? If false candidates will not be executed.
 
@@ -143,7 +173,7 @@ class Experiment(object):
         '''
         return True
 
-    def compare(self, control, candidate):
+    def compare(self, control: Observation, candidate: Observation) -> bool:
         '''
         Compares two :class:`Observation` instances.
 
@@ -159,7 +189,7 @@ class Experiment(object):
 
         return True
 
-    def publish(self, result):
+    def publish(self, result: Result) -> None:
         '''
         Publish the results of an experiment.
         This is called after each experiment run.
@@ -171,13 +201,21 @@ class Experiment(object):
         '''
         return
 
-    def get_context(self):
+    def get_context(self) -> Dict[str, Any]:
         '''
         :return dict: Experiment-wide context
         '''
         return self._context
 
-    def _run_tested_func(self, func, args, kwargs, name, context, raise_on_exception):
+    def _run_tested_func(
+        self,
+        func: Callable,
+        args: List[Any],
+        kwargs: Dict[str, Any],
+        name: str,
+        context: Dict[str, Any],
+        raise_on_exception: bool
+    ) -> Observation:
         ctx = deepcopy(self.get_context())
         ctx.update(context)
 
@@ -195,7 +233,11 @@ class Experiment(object):
 
         return obs
 
-    def _handle_comparison_mismatch(self, control, observation):
+    def _handle_comparison_mismatch(
+        self,
+        control: Observation,
+        observation: Observation
+    ) -> bool:
         if self.raise_on_mismatch:
             if observation.failure:
                 tb = ''.join(traceback.format_exception(*observation.exc_info))

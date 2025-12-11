@@ -76,7 +76,7 @@ enable_error_code = [  # pragma: alphabetize
   "truthy-bool",
   "truthy-iterable",
 ]
-strict = false
+strict = true
 ignore_missing_imports = true
 no_implicit_optional = true
 strict_equality = true
